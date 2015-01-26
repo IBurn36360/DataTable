@@ -15,7 +15,6 @@
  * Development Source
  */
  
-
 /*
  * Init the dataTable object and the default properties
  */
