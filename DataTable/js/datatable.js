@@ -217,7 +217,7 @@ dataTable.constructControlHeader = function () {
         // Now create the label for the input
         e = document.createElement('label');
         e.className = 'dataTable-togglecolumn-label datatable-unselectable';
-        e.innerHTML = this._columns[k]._name;
+        e.innerHTML = (typeof(this._columns[k]._display)) ? this._columns[k]._display : this._columns[k]._name;
         e.setAttribute('for', 'dataTable-togglecolumn-' + this._columns[k]._name);
         con.appendChild(e);
 
@@ -257,7 +257,7 @@ dataTable.constructHeader = function (returnOnlyContents) {
         // Construct the header row
         e = document.createElement('li');
         e.className = 'dataTable-header-column unselectable dataTable-hoverable';
-        e.innerHTML = this._columns[key]._name;
+        e.innerHTML = (typeof(this._columns[key]._display)) ? this._columns[key]._display : this._columns[key]._name;;
         e.id = 'header_' + this._columns[key]._name;
 
         if ((typeof(this._columns[key]._data._sortable) != 'undefined') &&
@@ -555,7 +555,9 @@ dataTable.doSort = function (column, direction) {
 
     if (typeof(this._columns[k]._data._sortType != 'undefined') && (this._columns[k]._data._sortType == 'number'))
     {
-        clone.sort(this.sortByNumber)
+        clone.sort(this.sortByNumber);
+    } else if (typeof(this._columns[k]._data._sortType != 'undefined') && (this._columns[k]._data._sortType == 'date')) {
+        clone.sort(this.sortByDate);
     } else {
         clone.sort(this.sort);
     }
@@ -631,6 +633,83 @@ dataTable.sort = function (a, b) {
 dataTable.sortByNumber = function(a, b) {
     var a1 = Number(a[1].replace(',', ''));
     var b1 = Number(b[1].replace(',', ''));
+    
+    if (a1 < b1) return -1;
+    if (a1 > b1) return 1;
+    return 0;
+};
+
+/*
+ * function sortByDate()
+ *
+ * Param a - mixed Base value for the sort matching
+ * Param b - mixed New value for the sort matching
+ *
+ * Return - int sort priority.  
+ *          1 if the value is sorted higher than the current
+ *          0 if the value is sorted the same as the current
+ *          -1 if the value is sorted lower then the current
+ *
+ * Sorts based on the assumption that the data provided is a date string
+ */
+dataTable.sortByDate = function(a, b) {
+    var a1;
+    var b1;
+    var ta = null;
+    var tb = null;
+    
+    // Both of the checks below transform the date, if we can not determine what format the date was in, assume it was a timestamp
+    
+    // American date
+    if (~a.indexOf('/'))
+    {
+        a = a.split('/');
+        ta = {
+            day: a[1],
+            month: a[0],
+            year: a[2]
+        };
+    } else if (~a.indexOf('-')) { // International
+        a = a.split('-');
+        ta = {
+            day: a[0],
+            month: a[1],
+            year: a[2]
+        };
+    }
+    
+    // American date
+    if (~b.indexOf('/'))
+    {
+        b = b.split('/');
+        tb = {
+            day: b[1],
+            month: b[0],
+            year: b[2]
+        };
+    } else if (~b.indexOf('-')) { // International
+        b = b.split('-');
+        tb = {
+            day: b[0],
+            month: b[1],
+            year: b[2]
+        };
+    }
+    
+    // if we split the date, reform it into a timestamp, otherwise leave it as-is
+    if (typeof(ta) == 'object')
+    { // D/M/Y
+        a1 = new Date(ta.day+'/'+ta.month+'/'+ta.year).getTime();
+    } else {
+        a1 = a;
+    }
+    
+    if (typeof(tb) == 'object')
+    {
+        b1 = new Date(tb.day+'/'+tb.month+'/'+tb.year).getTime();
+    } else {
+        b1 = b;
+    }
     
     if (a1 < b1) return -1;
     if (a1 > b1) return 1;
